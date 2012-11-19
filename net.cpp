@@ -7,6 +7,11 @@ net::net(ConnectionInfoDialog *dialog, Field *myField_, QMainWindow *mainwindow_
     state = ST_WAITING_STEP;
     myField = myField_;
     mainWindow = mainwindow_;
+    socket = 0;
+    state = ST_DISCONNECTED;
+    /*timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(checkOnDisconnected()));
+    timer->start(10000);*/
 }
 
 net::~net()
@@ -16,10 +21,12 @@ net::~net()
 
 void net::newCon()
 {
+    socket->disconnectFromHost();
     socket = new QTcpSocket;
     socket->connectToHost(QHostAddress(dialog_->getAddress()), dialog_->getPort());
     QString auth = "authorized:"+dialog_->getLogin()+":"+dialog_->getPassword();
     socket->write(auth.toLocal8Bit());
+    state = ST_WAITING_COMPETITOR;
     connect(socket, SIGNAL(readyRead()), this , SLOT(onReadyRead()));
     connect(socket, SIGNAL(disconnected()), this, SLOT(onDisconnected()));
 }
@@ -56,8 +63,12 @@ void net::parse(const QByteArray &cmd)
     }
 
     if (cmd == "wrong login or password\n")
+    {
              QMessageBox::information( dialog_->getParent(), QString("Attention"),
                                        QString("wrong login or password" ));
+             state = ST_DISCONNECTED;
+    }
+
     if (cmd == "wrongcmd\n")
         QMessageBox::information( dialog_->getParent(), QString("Attention"),
                                       QString("wrong cmd" ));
@@ -74,21 +85,45 @@ void net::parse(const QByteArray &cmd)
 
     if (cmd == "win")
     {
-        socket->disconnectFromHost();
+        //socket->disconnectFromHost();
         QMessageBox::information( dialog_->getParent(), QString("Attention"),
-                                      QString("You greate!" ));
+                                      QString("You win!" ));
     }
     if (cmd == "lose")
     {
-        socket->disconnectFromHost();
+        //socket->disconnectFromHost();
         QMessageBox::information( dialog_->getParent(), QString("Attention"),
-                                      QString("You louse..." ));
+                                      QString("You lose..." ));
     }
 
+    /*if (cmd == "pong")
+        serverPing = true;*/
+    if (cmd == "competitorDisconnected")
+    {
+        QMessageBox msgBox;
+        msgBox.setText("You competitor disconnected. You win!");
+        msgBox.setInformativeText("Do you want play again?");
+        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::Yes);
+        int ret = msgBox.exec();
+
+        switch (ret) {
+           case QMessageBox::Yes:
+               socket->write("replay");
+               myField->clear();
+               mainWindow->update();
+               state = ST_WAITING_COMPETITOR;
+               break;
+           case QMessageBox::No:
+               socket->disconnectFromHost();
+               break;
+           default:
+               break;
+         }
+    }
 
        return;
 }
-
 QTcpSocket* net::getSocket()
 {
     return socket;
@@ -102,5 +137,19 @@ Symbol net::getSymbol()
 void net::onDisconnected()
 {
     myField->clear();
-    state = ST_WAITING_STEP;
+    state = ST_DISCONNECTED;
+    mainWindow->update();
 }
+
+/*void net::pingServer()
+{
+    serverPing = false;
+    socket->write("ping");
+    QTimer::singleShot(2000,this, SLOT(checkOnDisconnected()));
+}
+
+void net::checkOnDisconnected()
+{
+    if (serverPing == false)
+        state = ST_DISCONNECTED;
+}*/

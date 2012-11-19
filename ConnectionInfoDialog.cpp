@@ -3,7 +3,7 @@
 
 const QString DEFAULT_LOGIN = "admin";
 const QString DEFAULT_PASSWORD = "123";
-const QString DEFAULT_ADDRES = "192.168.0.100:123";
+const QString DEFAULT_ADDRES = "127.0.0.1:123";
 
 ConnectionInfoDialog::ConnectionInfoDialog( QWidget* parent ):
     QDialog( parent )

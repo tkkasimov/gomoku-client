@@ -6,6 +6,7 @@
 #include "ConnectionInfoDialog.h"
 #include "field.h"
 #include <QMainWindow>
+#include <QTimer>
 
 enum Symbol
 {
@@ -16,7 +17,9 @@ enum Symbol
 enum Status
 {
     ST_WAITING_STEP,
-    ST_MAKING_STEP
+    ST_MAKING_STEP,
+    ST_DISCONNECTED,
+    ST_WAITING_COMPETITOR
 };
 
 class net:public QObject
@@ -38,10 +41,14 @@ private:
     ConnectionInfoDialog *dialog_;
     Field *myField;
     QMainWindow* mainWindow;
+    QTimer *timer;
+    //bool serverPing;
 
 public slots:
     void onReadyRead();
     void onDisconnected();
+    //void pingServer();
+   // void checkOnDisconnected();
 };
 
 #endif // NET_H

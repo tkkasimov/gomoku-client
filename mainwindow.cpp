@@ -13,6 +13,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     settingsDialog = new ConnectionInfoDialog(this);
     client = new net(settingsDialog, myField, this);
+    QTimer *updateState = new QTimer(this);
+    connect(updateState, SIGNAL(timeout()), this, SLOT(on_updateState()));
+    updateState->start(500);
 }
 
 MainWindow::~MainWindow()
@@ -27,6 +30,9 @@ void MainWindow::paintEvent(QPaintEvent *)
     QPainter painter(this);
     painter.drawImage(0,deltaY,QImage(":/field.png"));
     painter.drawImage(0,deltaY,cellsImage());
+    /*if (client->getState() != ST_DISCONNECTED)
+        ui->action->setEnabled(false);
+    else ui->action->setEnabled(true);*/
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
@@ -109,4 +115,23 @@ void MainWindow::on_action_2_activated()
 Field* MainWindow::getField()
 {
     return myField;
+}
+
+void MainWindow::on_updateState()
+{
+    switch (client->getState()){
+    case ST_WAITING_STEP:
+        ui->label_2->setText(QString::fromLocal8Bit("Ожидание хода противника"));
+        break;
+    case ST_MAKING_STEP:
+        ui->label_2->setText(QString::fromLocal8Bit("Ваш ход"));
+        break;
+    case ST_DISCONNECTED:
+        ui->label_2->setText("disconnected");
+        break;
+    case ST_WAITING_COMPETITOR:
+        ui->label_2->setText(QString::fromLocal8Bit("Поиск соперника"));
+        break;
+    }
+    return;
 }

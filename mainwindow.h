@@ -35,6 +35,8 @@ private slots:
 
     void on_action_2_activated();
 
+    void on_updateState();
+
 private:
     Ui::MainWindow *ui;
     ConnectionInfoDialog *settingsDialog;
